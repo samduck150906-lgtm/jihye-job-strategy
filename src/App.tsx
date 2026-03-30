@@ -1,26 +1,14 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, KanbanSquare, CalendarDays, Rocket, Target, Send, CheckCircle2, XCircle, TrendingUp, Search, Plus, MoreHorizontal, Bell, UserCircle2 } from 'lucide-react';
+import { LayoutDashboard, KanbanSquare, CalendarDays, Rocket, Target, Send, CheckCircle2, XCircle, TrendingUp, Search, Plus, Bell, UserCircle2, Lock, Unlock, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { useJobs, type Stage } from './contexts/JobContext';
+import { AppModal } from './components/AppModal';
 
 // --- UTILS ---
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
-}
-
-// --- DUMMY DATA ---
-type Stage = 'planning' | 'applied' | 'interview' | 'offer' | 'rejected';
-
-interface Application {
-  id: string;
-  company: string;
-  role: string;
-  stage: Stage;
-  appliedDate: string;
-  notes?: string;
-  logoUrl?: string;
-  salary?: string;
 }
 
 const STAGES: { id: Stage; label: string; color: string; icon: React.ReactNode }[] = [
@@ -31,46 +19,78 @@ const STAGES: { id: Stage; label: string; color: string; icon: React.ReactNode }
   { id: 'rejected', label: '쿨하게 탈락 (Rejected)', color: 'border-red-500', icon: <XCircle className="w-4 h-4 text-red-400" /> },
 ];
 
-const INIT_APPS: Application[] = [
-  { id: '1', company: '토스 (Toss)', role: 'Product Manager', stage: 'interview', appliedDate: '2026-03-25', salary: '협의' },
-  { id: '2', company: '네이버 (Naver)', role: '서비스 기획', stage: 'applied', appliedDate: '2026-03-28', salary: '업계 최고' },
-  { id: '3', company: '카카오 (Kakao)', role: '프로젝트 매니저', stage: 'planning', appliedDate: '', notes: '자소서 작성 중' },
-  { id: '4', company: '배달의민족 (Woowa)', role: 'PO', stage: 'offer', appliedDate: '2026-03-01', salary: '제안 완료' },
-  { id: '5', company: '당근 (Daangn)', role: '사업 기획', stage: 'rejected', appliedDate: '2026-03-10', notes: '핏 불일치' },
-  { id: '6', company: '쿠팡 (Coupang)', role: 'Sr. PM', stage: 'applied', appliedDate: '2026-03-29' },
-  { id: '7', company: '라인 (LINE)', role: 'Global PM', stage: 'interview', appliedDate: '2026-03-20', notes: '2차 면접 준비 (금요일)' },
-  { id: '8', company: '무신사 (Musinsa)', role: '기획/PM', stage: 'planning', appliedDate: '' },
-];
-
-
 export default function App() {
+  const { applications, editMode, enterEdit, exitEdit, deleteApp } = useJobs();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'board' | 'calendar'>('board');
-  const [applications] = useState<Application[]>(INIT_APPS);
   const [search, setSearch] = useState('');
+  
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const stats = {
     total: applications.length,
     applied: applications.filter(a => a.stage === 'applied' || a.stage === 'interview' || a.stage === 'offer' || a.stage === 'rejected').length,
     interviews: applications.filter(a => a.stage === 'interview').length,
     offers: applications.filter(a => a.stage === 'offer').length,
-    successRate: Math.round((applications.filter(a => a.stage === 'offer').length / Math.max(1, applications.filter(a => a.stage !== 'planning').length)) * 100)
+    successRate: applications.filter(a => a.stage !== 'planning').length > 0 
+        ? Math.round((applications.filter(a => a.stage === 'offer').length / applications.filter(a => a.stage !== 'planning').length) * 100) 
+        : 0
   };
 
   const filteredApps = applications.filter(a => 
     a.company.toLowerCase().includes(search.toLowerCase()) || 
-    a.role.toLowerCase().includes(search.toLowerCase())
+    a.role.toLowerCase().includes(search.toLowerCase()) ||
+    (a.notes && a.notes.toLowerCase().includes(search.toLowerCase()))
   );
+
+  const handleAuth = () => {
+    if (editMode) {
+      exitEdit();
+    } else {
+      const pw = prompt('비밀번호를 입력하세요 (Enter Password):');
+      if (pw) {
+        if (!enterEdit(pw)) {
+          alert('비밀번호가 틀렸습니다.');
+        }
+      }
+    }
+  };
+
+  const openAddModal = () => {
+    if (!editMode) return alert('편집 모드로 먼저 로그인 해주세요!');
+    setEditId(null);
+    setModalOpen(true);
+  };
+
+  const openEditModal = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editMode) return;
+    setEditId(id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!editMode) return;
+    if (confirm('정말로 이 항목을 삭제하시겠습니까?')) {
+      deleteApp(id);
+    }
+  };
 
   return (
     <div className="min-h-screen flex bg-[#060606] text-slate-200 font-sans selection:bg-primary/30">
+      
+      <AppModal open={modalOpen} onClose={() => setModalOpen(false)} editId={editId} />
+
       {/* SIDEBAR */}
-      <aside className="w-64 border-r border-[#1f1f1f] bg-[#0a0a0a] flex flex-col p-4 z-10 sticky top-0 h-screen">
-        <div className="flex items-center gap-3 mb-10 px-2 mt-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20">
+      <aside className="w-72 border-r border-[#1f1f1f] bg-[#0a0a0a] flex flex-col p-4 z-10 sticky top-0 h-screen">
+        <div className="flex items-start gap-3 mb-10 px-2 mt-2">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 shrink-0 mt-1">
             <Rocket className="w-4 h-4 text-white" />
           </div>
-          <h1 className="font-bold text-[15px] tracking-tight text-white leading-tight">
-            전략적 취준 전략<br/><span className="text-xs text-textDim font-medium">Jihye's Masterplan</span>
+          <h1 className="font-bold text-lg tracking-tight text-white leading-tight">
+            지혜의 취준<br/>
+            <span className="text-primary/90">근데 전략적사고를 곁들인</span>
           </h1>
         </div>
 
@@ -81,7 +101,7 @@ export default function App() {
         </nav>
 
         <div className="mt-auto px-4 py-4 rounded-xl bg-gradient-to-b from-[#1a1a1a] to-[#0a0a0a] border border-[#222]">
-          <div className="text-xs text-textDim mb-1 font-medium">합격률 (Success Rate)</div>
+          <div className="text-xs text-textDim mb-1 font-medium">현재 합격률 (Success Rate)</div>
           <div className="text-2xl font-bold text-white mb-2">{stats.successRate}%</div>
           <div className="w-full bg-[#2a2a2a] rounded-full h-1.5 overflow-hidden">
             <motion.div 
@@ -109,14 +129,16 @@ export default function App() {
             />
           </div>
           <div className="flex items-center gap-4">
-            <button className="text-textDim hover:text-white transition-colors relative">
+            <button onClick={handleAuth} className="text-textDim hover:text-white transition-colors relative" title="Edit Mode">
+              {editMode ? <Unlock className="w-5 h-5 text-green-400" /> : <Lock className="w-5 h-5 text-slate-500" />}
+            </button>
+            <button className="text-textDim hover:text-white transition-colors relative hidden sm:block">
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full border border-[#0a0a0a]"></span>
             </button>
-            <button className="flex items-center gap-2 pl-4 border-l border-[#222]">
+            <div className="flex items-center gap-2 pl-4 border-l border-[#222]">
               <div className="text-sm font-medium text-white hidden sm:block">지혜 (Jihye)</div>
-             <UserCircle2 className="w-6 h-6 text-textDim" />
-            </button>
+              <UserCircle2 className="w-6 h-6 text-textDim" />
+            </div>
           </div>
         </header>
 
@@ -132,10 +154,9 @@ export default function App() {
                   <StatCard title="최종 합격 (Offers)" value={stats.offers} icon={<CheckCircle2 className="text-green-400" />} highlight delay={0.3} />
                 </div>
                 
-                <div className="grid grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div className="col-span-2 bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl p-6">
                     <h3 className="font-semibold text-white mb-4">주간 지원 현황 (돌려막기 트래커)</h3>
-                    {/* Placeholder Chart */}
                     <div className="h-64 flex items-end justify-between gap-2 px-2 pb-4 border-b border-[#222]">
                       {[4, 12, 8, 15, 22, 5, 18].map((v, i) => (
                         <div key={i} className="w-full bg-[#1a1a1a] rounded-t-sm flex flex-col justify-end group">
@@ -153,19 +174,23 @@ export default function App() {
                     </div>
                   </div>
                   
-                  <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl p-6">
+                  <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl p-6 overflow-y-auto max-h-[380px] custom-scrollbar">
                     <h3 className="font-semibold text-white mb-4">최근 액션 (Recent Actions)</h3>
-                    <div className="space-y-4">
-                      {filteredApps.slice(0, 5).map((app) => (
-                        <div key={app.id} className="flex items-center gap-3">
-                          <div className={cn("w-2 h-2 rounded-full", STAGES.find(s=>s.id===app.stage)?.color.replace('border-', 'bg-') || 'bg-slate-500')} />
-                          <div>
-                            <div className="text-sm text-white font-medium">{app.company}</div>
-                            <div className="text-xs text-textDim">{app.stage} • {app.appliedDate || 'No date'}</div>
+                    {filteredApps.length === 0 ? (
+                       <p className="text-sm text-textDim italic">새로운 지원 내역이 없습니다.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredApps.slice(0, 10).map((app) => (
+                          <div key={app.id} className="flex items-center gap-3">
+                            <div className={cn("w-2 h-2 rounded-full", STAGES.find(s=>s.id===app.stage)?.color.replace('border-', 'bg-') || 'bg-slate-500')} />
+                            <div>
+                              <div className="text-sm text-white font-medium">{app.company}</div>
+                              <div className="text-xs text-textDim">{STAGES.find(s=>s.id===app.stage)?.label.split(' ')[0]} • {app.appliedDate || 'No date'}</div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -178,7 +203,10 @@ export default function App() {
                     <h2 className="text-2xl font-bold text-white tracking-tight">지원 현황 칸반 (Pipeline)</h2>
                     <p className="text-sm text-textDim mt-1">100개 지원 가보자고. 전략적으로 드랍하고 붙기.</p>
                   </div>
-                  <button className="bg-white text-black font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                  <button 
+                    onClick={openAddModal}
+                    className="bg-white text-black font-semibold text-sm px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-200 transition-colors shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+                  >
                     <Plus size={16} /> 새 지원처 추가
                   </button>
                 </div>
@@ -207,13 +235,20 @@ export default function App() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 key={app.id} 
-                                className="bg-[#141414] border border-[#222] p-3 rounded-lg hover:border-[#333] transition-colors cursor-grab group"
+                                className="bg-[#141414] border border-[#222] p-3 rounded-lg hover:border-[#333] transition-colors cursor-pointer group relative"
+                                onClick={(e) => openEditModal(app.id, e)}
                               >
                                 <div className="flex items-start justify-between mb-2">
                                   <h4 className="font-semibold text-white text-sm leading-snug">{app.company}</h4>
-                                  <button className="text-[#555] opacity-0 group-hover:opacity-100 transition-opacity hover:text-white">
-                                    <MoreHorizontal size={14} />
-                                  </button>
+                                  {editMode && (
+                                    <button 
+                                      className="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-300 p-1 bg-[#222] rounded-md"
+                                      onClick={(e) => handleDelete(app.id, e)}
+                                      title="Delete"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
                                 </div>
                                 <div className="text-[13px] text-primary/90 font-medium mb-3">{app.role}</div>
                                 {app.appliedDate && (
@@ -222,8 +257,14 @@ export default function App() {
                                   </div>
                                 )}
                                 {app.notes && (
-                                  <div className="text-[11px] text-textDim border-l-2 border-[#333] pl-2 mt-2 leading-relaxed h-auto line-clamp-2">
+                                  <div className="text-[11px] text-textDim border-l-2 border-[#333] pl-2 mt-2 leading-relaxed h-auto whitespace-pre-line">
                                     {app.notes}
+                                  </div>
+                                )}
+                                
+                                {editMode && (
+                                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    클릭하여 수정
                                   </div>
                                 )}
                               </motion.div>
@@ -247,10 +288,7 @@ export default function App() {
                 <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl p-8 flex items-center justify-center h-[600px] flex-col">
                   <CalendarDays className="w-16 h-16 text-[#333] mb-4" />
                   <h3 className="text-xl font-medium text-white mb-2">캘린더 뷰 (Calendar View)</h3>
-                  <p className="text-textDim text-sm max-w-sm text-center">전략적인 일정 관리를 위한 캘린더 기능은 준비 중입니다. 면접 일정과 과제 마감일을 한눈에 볼 수 있게 될 예정입니다!</p>
-                  <button className="mt-6 border border-[#333] text-sm text-text bg-[#141414] px-4 py-2 rounded-lg hover:bg-[#1f1f1f] transition-colors">
-                    알림 설정하기
-                  </button>
+                  <p className="text-textDim text-sm max-w-sm text-center">곧 제공될 예정입니다. 면접 일정과 과제 마감일을 달력 형태로 파악하세요!</p>
                 </div>
               </motion.div>
             )}
@@ -289,7 +327,7 @@ function StatCard({ title, value, icon, highlight, delay = 0 }: any) {
       )}
     >
       {highlight && (
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-green-500/10 blur-[40px] rounded-full point-events-none" />
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-green-500/10 blur-[40px] rounded-full pointer-events-none" />
       )}
       <div className="flex justify-between items-start">
         <div className="text-sm font-medium text-textDim mb-1">{title}</div>
