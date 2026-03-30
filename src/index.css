@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text font-sans antialiased;
+  }
+}
+
+.glass-panel {
+  @apply bg-surface/80 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl;
+}
+
+.card {
+  @apply bg-surface border border-border rounded-lg p-4 shadow-sm transition-all hover:border-primary/50 hover:shadow-primaryDim;
+}
