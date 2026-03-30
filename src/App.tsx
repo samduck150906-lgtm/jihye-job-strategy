@@ -5,6 +5,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useJobs, type Stage } from './contexts/JobContext';
 import { AppModal } from './components/AppModal';
+import { CalendarView } from './components/CalendarView';
 
 // --- UTILS ---
 function cn(...inputs: ClassValue[]) {
@@ -284,12 +285,8 @@ export default function App() {
             )}
 
             {activeTab === 'calendar' && (
-              <motion.div key="calendar" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}}>
-                <div className="bg-[#0a0a0a] border border-[#1f1f1f] rounded-xl p-8 flex items-center justify-center h-[600px] flex-col">
-                  <CalendarDays className="w-16 h-16 text-[#333] mb-4" />
-                  <h3 className="text-xl font-medium text-white mb-2">캘린더 뷰 (Calendar View)</h3>
-                  <p className="text-textDim text-sm max-w-sm text-center">곧 제공될 예정입니다. 면접 일정과 과제 마감일을 달력 형태로 파악하세요!</p>
-                </div>
+              <motion.div key="calendar" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="h-full">
+                <CalendarView />
               </motion.div>
             )}
           </AnimatePresence>
