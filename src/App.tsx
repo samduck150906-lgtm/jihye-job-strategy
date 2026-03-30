@@ -6,6 +6,7 @@ import { twMerge } from 'tailwind-merge';
 import { useJobs, type Stage } from './contexts/JobContext';
 import { AppModal } from './components/AppModal';
 import { CalendarView } from './components/CalendarView';
+import { OwlLetter } from './components/OwlLetter';
 
 // --- UTILS ---
 function cn(...inputs: ClassValue[]) {
@@ -82,6 +83,7 @@ export default function App() {
     <div className="min-h-screen flex bg-[#060606] text-slate-200 font-sans selection:bg-primary/30">
       
       <AppModal open={modalOpen} onClose={() => setModalOpen(false)} editId={editId} />
+      <OwlLetter />
 
       {/* SIDEBAR */}
       <aside className="w-72 border-r border-[#1f1f1f] bg-[#0a0a0a] flex flex-col p-4 z-10 sticky top-0 h-screen">
