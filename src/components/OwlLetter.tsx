@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MailOpen, Heart, Stars, Mail } from 'lucide-react';
 
-const LETTER_CONTENT = `지혜야 말만으로 응원한다고 하는게 아니라 내 일, 내 가족의 일처럼 응원하고 있어. 꼭 잘 되어야 할 필요가 있는건 아니니까 그냥 니가 어떨 때 행복한지를 알고 매일 행복했으면 좋겠어. 그리고, 이런 하루하루들이 과도기가 아니라 모두 의미 있는 시간들임을 알고 더 행복하길 바랄게.
+const LETTER_CONTENT = `지혜야 말만으로 응원한다고 하는게 아니라 내 일, 내 가족의 일처럼 응원하고 있어. 꼭 잘 되어야 할 필요가 있는 것도 아니고, 잘 된 것에 대한 정해진 기준도 없어. 그냥 니가 어떨 때 행복한지를 알고 매일 행복했으면 좋겠어. 내가 큰 회사 넣으라든지 그런 이야기 하는건, 그렇게 되면 니가 더 행복해할 것 같아서인데, 나의 추측일 뿐이니까 너의 기준대로 행복을 찾아가길 바랄게. 이런 하루하루들이 과도기가 아니라 모두 의미 있는 시간들임을 알고 더 행복하길 바랄게. 그리고 무슨 일이 있든 어떤 상황이든 나는 항상 보이는 곳에 있을테니까 더 든든했음 좋겠어.
 -름이 드림`;
 
 export function OwlLetter() {
